@@ -1,11 +1,10 @@
+##Author: Niklas Wozniak
+##Assignment: 3.5
+##Task: Benchmarking the creation of an ordered List
+##Task: Benchmarking the creation of an ordered BST
+##Task: Contrasting both performances to reality & draw conclusions
 
-#Explore the pros of using trees compared to lists.
-#Use the skeleton code below and implement the functions that handles an ordered list and an ordered tree.
-#What run times do you have? what are your conclusions?
-#Write a short reports where you describe your findings.
-
-
-
+################################################################Main method
 defmodule Bench do
 
   def bench() do
@@ -38,15 +37,33 @@ defmodule Bench do
 
     :ok
   end
+########################################################################################################################
+#lists
+	def list_new() do [] end
+ 
+  	#tail recursion for insertion
+  	def list_insert(e, []) do [e] end
+  	def list_insert(e, [h|t]) do 
+  		if h > e do 
+  			[e | [h|t]]
+  		else
+  			[h | list_insert(e, t)]
+  		end
+  	end
+	
+  ########################################################################################################################
+  #ordered BST	 
+  	def tree_new() do {:node, :nil, :nil, :nil} end
   
-  def list_new() do ... end
-  
-  def list_insert(e, l) do 
-     :
-  end
-  
-  def tree_new() do ... end
-  
-  def tree_insert(e, l) do 
-     :
-  end
+  #insertion 
+	
+  	def tree_insert(key, {:node, :nil, _, _}) do {:node, key, {:node, :nil, :nil, :nil}, {:node, :nil, :nil, :nil}} end
+  	def tree_insert(key, {:node, k, left, right}) do 
+  		if key < k do 
+  			{:node, k, tree_insert(key, left), right}
+  		else
+  			{:node, k, left, tree_insert(key, right)}
+  		end
+		end
+	end
+end
