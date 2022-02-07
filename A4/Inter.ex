@@ -7,6 +7,9 @@ defmodule Env do
 		[]
 	end
 	
+	def add(e, env) do 
+		[e|env]
+	end	
 	def add(id, str, env) do
 		[{id, str}|env]
 	end
@@ -44,5 +47,25 @@ defmodule Eager do
 					{:ok, ts} -> {:ok, Tuple.append({acc}, ts)}
 				end
 		end
+	end
+#	def eval_match(:ingore, ...) do ... end
+	def eval_match({:atm, id}, id, []) do
+		{:ok, []}
+	end
+	def eval_match({:var, id}, str, env) do 
+		case Env.lookup(id, env) do
+			nil -> {:ok, Env.add(id, str, env)}
+			{_, ^str} -> {:ok, Env.add(id, str, env)}
+			{_, _} -> :fail
+		end
+	end
+	def eval_match({:cons, hp, tp}, str, env) do
+		case eval_match(hp, str, env) do 
+			:fail -> eval_match(tp, str, Env.add(hp, env))
+			_ -> :fail
+		end
+	end
+	def eval_match(_, _, _) do
+  		:fail
 	end
 end
