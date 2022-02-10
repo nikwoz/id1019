@@ -29,7 +29,8 @@ defmodule Env do
 end
 
 ####################################expression evaluation
-defmodule Eager do 
+defmodule Eager do
+	##################################################Evaluate_expression 
 	def eval_expr({:atm, id}, []) do {:ok, id} end
 	def eval_expr({:atm, id}, _) do {:ok, id} end
 	def eval_expr({:var, id}, env) do 
@@ -48,7 +49,8 @@ defmodule Eager do
 				end
 		end
 	end
-#	def eval_match(:ingore, ...) do ... end
+	#################################################Evaluate_match
+#	def eval_match(:ingore, ...) do ... end 				#don't understand this one...
 	def eval_match({:atm, id}, id, []) do
 		{:ok, []}
 	end
@@ -68,4 +70,21 @@ defmodule Eager do
 	def eval_match(_, _, _) do
   		:fail
 	end
+	################################################Evaluate_sequence
+	def eval_scope(pt, env) do 
+		Env.remove(extract_vars(env), env)
+	end
+	def eval_seq([exp], env) do 
+		eval_expr(exp, env)
+	end
+	def eval_seq([{:match, pt, exp}| tail ] env) do 
+		case eval_expr(exp, env) do 
+			:error -> :error
+			{:ok, str} -> ext_env = eval_scope(pt, env)
+						case eval_match(pt, str, ext_env) do
+							:fail -> :error
+							{:ok, env} -> eval_seq(tail, ext_env)
+						end
+		end
+	end 
 end
