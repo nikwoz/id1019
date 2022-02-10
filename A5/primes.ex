@@ -1,9 +1,25 @@
 defmodule Prim do
-	def test(n) do 
-		list = Enum.to_list(2..n)
-#		next(list, list)
-#		sofar(list, [])
+	def test() do 
+		ls = [16,32,64,128,256,512,1024,2*1024,4*1024,8*1024, 16*1024, 24*1024]
+		bench(ls)
+	end
+	
+	def bench([]) do :ok end
+	def bench([h|t]) do 
+		list = Enum.to_list(2..h)
+		t0 = Time.utc_now()
+		next(list, list)
+		t1 = Time.utc_now()
+		sofar(list, [])
+		t2 = Time.utc_now()
 		reverse(sogood(list, []))
+		t3 = Time.utc_now()
+		b1 = Time.diff(t1, t0, :microsecond)
+		b2 = Time.diff(t2, t1, :microsecond)
+		b3 = Time.diff(t3, t2, :microsecond)
+	  	#:io.format(file, "~w\t~w\t~w\n", [i, tl, tt])
+	  	IO.write("  #{b1}\t\t\t#{b2}\t\t\t#{b3}\n")
+		bench(t)
 	end
 	
 
