@@ -12,58 +12,57 @@ defmodule Lum do
 	end
 
 
-#checking the mem
+#check
 	def check(seq,  mem) do
-    		case Memo.lookup(mem, seq) do
-      			nil -> count(seq, mem)
+    		case Memo.lookup(mem, Enum.sort(seq)) do
+      			nil -> cost(seq, mem)
       			{c, t} -> {c, t, mem}
 		end 
 	end
 
-	
-#counting the cost
-	def count([]) do {0} end
-	def count([_]) do {0} end
-
-	def count(seq) do 
-		{count, tree, _} = count(seq, Memo.new())
-		{count, tree}
+#cost
+	def cost([]) do {0, :na} end 
+	def cost([s]) do {0, s} end 
+	def cost(seq) do 
+		{cost, tree, _} = cost(Enum.sort(seq), Memo.new())
+		{cost, tree} 	
 	end
 	
-  	def count([s], mem) do {0, s, mem} end
-  	def count(seq, mem) do
-    		{c, t, mem} = count(seq, 0, [], [], mem)			#problema: mem no es tree
-    		{c, t, Memo.add(mem, seq, {c, t})}
+	def cost([s], mem) do {0, s, mem} end
+  	def cost([s| rest] = seq, mem) do
+    		{c, t, mem} = cost(rest, s, [s], [], mem)
+    		{c, t, Memo.add(mem, Enum.sort(seq), {c, t})}
   	end
 
-	def count([], l, left, right, mem) do 
-		{(l + elem(count(left), 0) + elem(count(right), 0)), mem}
-	end
-				
-	def count([s], l, [], right, mem) do 				
-		{(l + s + elem(count(right), 0)), mem}
-	end
-
-	def count([s], l, left, [], mem) do 
-		{(l + elem(count(left), 0) + s), mem}
-	end
 	
-
-
-	def count([s|rest], l, left, right, mem) do
-		c1 = {count(rest, l+s, [s|left], right, mem), {s, left}}
-		c2 = {count(rest, l+s, left, [s|right], mem), {s, right}} 
-		if (elem(c1, 0) < elem(c2, 0)) do 
-			c1  
-		else 
-			c2 
+	def cost([], l, left, right, mem) do
+		{c1, t1, m1} = check(left, mem)
+		{c2, t2, m2} = check(right, m1) 
+		({l + c1 + c2, {t1, t2}, m2}) 
+	end
+	def cost([s], l, left, [], mem) do
+		{c, t, m} = check(left, mem) 
+		{s + l + c, {t, s}, m} 
+	end
+	def cost([s], l, [], right, mem) do 
+		{c, t, m} = check(right, mem)
+		{s + l + c, {t, s}, m} 
+	end
+	def cost([s|rest], l, left, right, mem) do 
+		{c1, t1, m} = cost(rest, l+s, [s|left], right, mem)
+		{c2, t2, mm} = cost(rest, l+s, left, [s|right], mem)
+		if c1 < c2 do 
+			{c1, t1, m}
+		else
+			{c2, t2, mm}
 		end
-	 end 
+	end
+		
 
 #benchcmarking the costs
 	def bench(n) do 
 		for i <- 1..n do
- 			{t,_} = :timer.tc(fn() -> count(Enum.to_list(1..i)) end)
+ 			{t,_} = :timer.tc(fn() -> cost(Enum.to_list(1..i)) end)
       			IO.puts(" n = #{i}\t t = #{t} us")
     		end
 	end
@@ -71,8 +70,8 @@ defmodule Lum do
 end
 
 
-defmodule Memo do 
+defmodule Memo do
 	def new() do %{} end
-	def add(mem, key, val) do Map.put(mem, key, val) end
-	def lookup(mem, key) do Map.get(mem, key) end
+	def add(mem, key, val) do Map.put(mem, :binary.list_to_bin(key), val) end
+	def lookup(mem, key) do Map.get(mem, :binary.list_to_bin(key)) end
 end
