@@ -1,17 +1,53 @@
 defmodule Huffman do 
+
+
+
+
+###############################################################################################################
+	#reads a file in search of text
+	#recieves a file and retrieves a charlist
+ 	def sample(file) do
+		{:ok, file} = File.open(file, [:read, :utf8])
+		binary = IO.read(file, :all)
+		File.close(file)
 	
- 	def sample() do
-    		'the quick brown fox jumps over the lazy dog
-    		this is a sample text that we will use when we build
-    		up a table we will only handle lower case letters and
-    		no punctuation symbols the frequency will of course not
-   		represent english but it is probably not that far off'
+		case :unicode.characters_to_list(binary, :utf8) do
+    			{:incomplete, list, _} -> list
+			list -> list
+		end
 	end
- 	def text()  do
-		 'this is something that we should encode'
+
+
+###############################################################################################################
+	#encodes a sample text	
+	#accepts a charlist and retrieves a bin list
+	def en_text() do
+		charlist = sample("id.txt") 
+		tree = tree(build(list(charlist)))			#BST(freqList)
+		map = encode(hd(tree))					#mapping
+		en_text(charlist, map, [])
 	end
-	
+	def en_text([], _, acc) do acc end
+	def en_text([h|t], map, acc) do
+		if(Map.get(map, h) == :nil) do 
+			en_text(t, map, acc)
+		else
+			en_text(t, map, Enum.concat(acc, Map.get(map, h)))
+		end
+	end
+
+
+################################################################################################################
+	#decodes huffman-compressed text given with given tree
+	# accepts a bin list and retrieves a charlist
+	def de_text([]) do [] end
+	def de_text(bin, tree) do 
+		
+	end
+################################################################################################################
 	#create list with char-freq
+	#receives a charlist and returns a tuple containing the frequencies for each index. 
+	#each index is supposed to map to a character
 	def list(sth) do
 		tupe = {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0} #30 space for ASCII characters
 		list(sth, tupe)
@@ -36,7 +72,20 @@ defmodule Huffman do
 		end
 	end
 
-	
+################################################################################################################
+	#build a tree: nodes: {freq, left, righ} leaf: {freq, char}
+	#receives a list of tuples and outputs a list with one element: a recursive tuple containing the tree
+	#def dotree() do 
+	#	list = build(list(sample()))
+	#	tree(list)
+	#end
+	def tree([e]) do [e] end
+	def tree([{0, _}|[h2|t]]) do tree([h2|t]) end
+	def tree([h1|[h2|t]]) do
+		parent = {elem(h1, 0) + elem(h2, 0), h1, h2}
+		tree(List.keysort([parent|t], 0))
+	end
+
 	def build(tup) do 
 		build(Tuple.to_list(tup), [], 0)
 	end
@@ -51,37 +100,22 @@ defmodule Huffman do
 
 
 
-	#build a tree: nodes: {sum, left, right, value}
-	def dotree() do 
-		list = build(list(sample()))
-		tree(list)
+################################################################################################################
+	#encoding will receive a tree and output a map %{character  => [path]}
+	#def encode() do 
+	#	encode(hd(dotree()))
+	#end
+	def encode(tree) do 
+		encode(tree, [], %{})
 	end
-	def tree([e]) do [e] end
-	def tree([{_, 0}|[h2|t]]) do tree([h2|t]) end
-	def tree([h1|[h2|t]]) do
-		parent = {elem(h1, 0) + elem(h2, 0), h1, h2}
-		tree([parent|t])
+	def encode({_, char}, code, map) do 
+		map = Map.put_new(map, char, code)
+		map
 	end
-
-
-	def encode() do 	
-		encode(List.to_tuple(dotree()), %{}, [])
+	def encode({_, left, right}, code, map) do 
+		mapLeft = encode(left, code ++ [0], map)
+		mapRight = encode(right, code ++ [1], map)
+		totalMap = Map.merge(mapLeft, mapRight)
+		totalMap
 	end
-	def encode(tree, map, code) do 
-		case tuple_size(tree) do
-			1 -> IO.puts("length 1: ")
-				encode(elem(tree, 0), map, code)
-			2 -> IO.puts("** inserting in map: {#{elem(tree, 0)}, #{elem(tree, 1)}}")
-			3 -> IO.puts("this is a node: --> left")
-				encode(elem(tree, 1), map, code)
-		end
-		case tuple_size(tree) do 
-			1 -> IO.puts("length 11: ")
-				encode(elem(tree, 0), map, [code|1])	
-			2 -> :ok2 
-			3 -> IO.puts("this is a node --> right") 
-				encode(elem(tree, 2), map, [code|1])
-		end
-	end
-
 end
