@@ -1,3 +1,5 @@
+
+
 defmodule Comp do 
 	def new(r, i) do {r, i} end
 	def add({a1, a2}, {b1, b2}) do
@@ -12,32 +14,10 @@ defmodule Comp do
 end
 
 defmodule Mandel do
-	def madnelbrot(1, 0, _, _, _, _, acc) do acc end 
-	
-	def mandelbrot(width, 0, x, y, k, depth, acc) do
-		trans = fn(h, w) -> Comp.new(x + k * (w - 1), y - k * (h - 1)) end
-		rows(width, 0, trans, depth, [])
-	end
-	def mandelbrot(width, height, x, y, k, depth, acc) do
-  		trans = fn(w, h) -> Comp.new(x + k * (w - 1), y - k * (h - 1)) end
-		IO.puts("width: #{width}, height: #{height}")
-		mandelbrot(width, height-1, x, y, k, depth, [acc, rows(width, height, trans, depth, [])])
-	end
-
-	def rows(0, _, _, _, acc) do 
-		IO.puts(is_list(acc))
-		acc
-	end	
-	def rows(width, height, trans, depth, acc) do 
-		brot = Brot.mandelbrot(trans.(width, height), depth)
-		IO.puts("* width: #{width}, height: #{height}")
-		rows(width-1, height, trans, depth, acc ++ [Color.convert(brot, 5)])
-	end
-	
 	def demo() do
   		small(-2.6, 1.2, 1.2)
 	end
-
+	
 	def small(x0, y0, xn) do
   		width = 960
   		height = 540
@@ -46,26 +26,52 @@ defmodule Mandel do
   		image = Mandel.mandelbrot(width, height, x0, y0, k, depth, [])
   		PPM.write('small.ppm', image)
 	end
+
+	#returns a list of tuples : should return a list containing lists containing tuples.
+	def madnelbrot(1, 0, _, _, _, _, acc) do acc end 
+	def mandelbrot(width, 0, x, y, k, depth, acc) do
+		trans = fn(h, w) -> Comp.new(x + k * (w - 1), y - k * (h - 1)) end #--------------------------->function that creates complex numbers
+#		IO.puts("width: #{width}, height: 0")
+		acc ++ [rows(width, 0, trans, depth, [])]
+	end
+	def mandelbrot(width, height, x, y, k, depth, acc) do
+  		trans = fn(w, h) -> Comp.new(x + k * (w - 1), y - k * (h - 1)) end #-------------------------->function that creates complex numbers
+#		IO.puts("width: #{width}, height: #{height}")
+		mandelbrot(width, height-1, x, y, k, depth, acc ++ [rows(width, height, trans, depth, [])]) #--->recursion for getting list of rows (height-1)
+	end
+
+
+
+	def rows(0, _, _, _, acc) do 
+		IO.puts(is_list(acc))#------------------------------------------------------------------------->returns a list : true
+		acc
+	end	
+	def rows(width, height, trans, depth, acc) do 
+		brot = Brot.mandelbrot(trans.(width, height), depth)
+		IO.puts("* width: #{width}, height: #{height}")
+		rows(width-1, height, trans, depth, acc ++ [Color.convert(brot, 5)])#---------------------------->recursion for getting the elements of a row
+	end
+
 end
 
 defmodule Brot do 
 	def mandelbrot(c, m) do  #given the complex number and the threshold	
-		z0 = Comp.new(0, 0)
-		i = 0
-		test(i, z0, c, m)
+		test(0, Comp.new(0, 0), c, m)
 	end	
 
-	def test(i, _, _, 0) do i end
+	def test(i, _, _, 0) do 
+		i
+	end
 	def test(i, z0, c, m) do
 		zn = (Comp.add(Comp.sqr(z0), c)) 	
 		mag = Comp.abs(zn)
-		if mag > 2 do 
-			mag
-		else 
-			test(i, zn, c, m-1)
+		cond do 
+			mag > 2 -> mag 
+			mag < 2 -> test(i, zn, c, m-1)
 		end
 	end
 end
+
 
 defmodule PPM do
 
@@ -85,32 +91,29 @@ defmodule PPM do
   end
 
   defp rows(rows, fd) do
-  	Enum.each(rows, fn(r) ->
-      	colors = row(r)
-      	IO.write(fd, colors)
-    	end)
+	  Enum.each(rows, fn(r) -> 	colors = row(r) 
+	  							IO.write(fd, colors)
+							end)
   end
 
   defp row(row) do
-    List.foldr(row, [], fn({:rgb, r, g, b}, a) ->
-      [r, g, b | a]
-    end)
+#	  IO.puts(row)
+	  List.foldr(row, [], fn({r, g, b}, a) -> [r, g, b | a] end)				#({:rgb, r, g, b}, a) -> [r, g, b | a] end)
   end
 
 end
 
-
 defmodule Color do 
 	def convert(depth, max) do 
-		f = div(trunc(depth*10000), max) * 0.0004
+		f = trunc(div(trunc(depth*10000), max) * 0.0004)
 		x = trunc(f)
 		y = trunc(255*(f-x))
 		case f do 
 			0 -> {y, 0, 0} 
-			1 -> {255, y, 0}
-			2 -> {255-y, 255, 0}
-			3 -> {0, 255, y}
-			_ -> {0, 255-y, 255}
+			1 -> {0, 255-y, 255}
+			2 -> {0, 200, 255}
+			3 -> {0, 235, 255}
+			_ -> {0, 255, 255}
 		end
 	end
 end
